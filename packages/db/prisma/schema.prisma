@@ -1,0 +1,246 @@
+// Automated Car Wash — data model.
+// Shape: Station -> Bay -> Session -> Payment, plus Plan, Setting, Event,
+// Reading, Issue, Device (paired Android phones) and User (owner login).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BayStatus {
+  ready
+  in_use
+  paused
+  power_returned
+  out_of_service
+}
+
+enum SessionState {
+  pending
+  running
+  paused
+  ended
+}
+
+enum CheckoutState {
+  awaiting
+  matched
+  pending
+  expired
+  cancelled
+}
+
+enum PaymentState {
+  matched
+  unmatched
+  duplicate
+  pending
+}
+
+enum VehicleType {
+  bike
+  car
+}
+
+enum DeviceRole {
+  listener
+  dashboard
+}
+
+enum IssueStatus {
+  open
+  resolved
+}
+
+model Station {
+  id        String    @id @default(cuid())
+  name      String
+  ownerVpa  String
+  payeeName String
+  createdAt DateTime  @default(now())
+
+  bays     Bay[]
+  plans    Plan[]
+  settings Setting[]
+}
+
+model Bay {
+  id              String    @id @default(cuid())
+  station         Station   @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  stationId       String
+  name            String
+  status          BayStatus @default(out_of_service)
+  online          Boolean   @default(false)
+  lastHeartbeatAt DateTime?
+  // Per-bay MQTT credentials (PRD §Security). Null until provisioned.
+  mqttUser        String?
+  mqttPass        String?
+  // Rotating QR token shown on the bay screen.
+  currentToken    String?
+  tokenExpiresAt  DateTime?
+  createdAt       DateTime  @default(now())
+
+  sessions  Session[]
+  checkouts Checkout[]
+  events    Event[]
+  readings  Reading[]
+  issues    Issue[]
+
+  @@index([stationId])
+}
+
+model Plan {
+  id          String      @id @default(cuid())
+  station     Station     @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  stationId   String
+  name        String
+  vehicleType VehicleType
+  durationSec Int
+  pricePaise  Int
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  sessions  Session[]
+  checkouts Checkout[]
+
+  @@index([stationId])
+}
+
+model Session {
+  id           String       @id @default(cuid())
+  bay          Bay          @relation(fields: [bayId], references: [id], onDelete: Cascade)
+  bayId        String
+  plan         Plan         @relation(fields: [planId], references: [id])
+  planId       String
+  state        SessionState @default(pending)
+  // Identifies the controlling browser (session cookie); survives reloads.
+  cookieId     String
+  startedAt    DateTime?
+  endedAt      DateTime?
+  remainingSec Int
+  pauseUsedSec Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  checkout Checkout?
+  issues   Issue[]
+
+  @@index([bayId])
+  @@index([cookieId])
+}
+
+model Checkout {
+  id          String        @id @default(cuid())
+  bay         Bay           @relation(fields: [bayId], references: [id], onDelete: Cascade)
+  bayId       String
+  plan        Plan          @relation(fields: [planId], references: [id])
+  planId      String
+  session     Session?      @relation(fields: [sessionId], references: [id])
+  sessionId   String?       @unique
+  // Browser that created the checkout; becomes the session's controlling cookie.
+  cookieId    String?
+  // Unique amount (paise) used to match an observed UPI credit to this checkout.
+  amountPaise Int
+  state       CheckoutState @default(awaiting)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+
+  payments Payment[]
+
+  @@index([bayId])
+  @@index([state])
+  @@index([amountPaise])
+}
+
+model Payment {
+  id          String       @id @default(cuid())
+  checkout    Checkout?    @relation(fields: [checkoutId], references: [id])
+  checkoutId  String?
+  device      Device?      @relation(fields: [deviceId], references: [id])
+  deviceId    String?
+  amountPaise Int
+  // UPI reference number — the dedupe key for duplicate notifications/SMS.
+  upiRef      String       @unique
+  senderVpa   String?
+  observedAt  DateTime
+  rawText     String?
+  state       PaymentState @default(unmatched)
+  createdAt   DateTime     @default(now())
+
+  @@index([amountPaise])
+  @@index([state])
+}
+
+model Setting {
+  id        String  @id @default(cuid())
+  station   Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  stationId String
+  key       String
+  value     String
+
+  @@unique([stationId, key])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  bay       Bay?     @relation(fields: [bayId], references: [id], onDelete: Cascade)
+  bayId     String?
+  type      String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([bayId, createdAt])
+  @@index([type])
+}
+
+model Reading {
+  id           String   @id @default(cuid())
+  bay          Bay      @relation(fields: [bayId], references: [id], onDelete: Cascade)
+  bayId        String
+  motorOn      Boolean
+  mains        Boolean
+  batteryMv    Int?
+  wifiRssi     Int?
+  remainingSec Int?
+  createdAt    DateTime @default(now())
+
+  @@index([bayId, createdAt])
+}
+
+model Issue {
+  id          String      @id @default(cuid())
+  session     Session?    @relation(fields: [sessionId], references: [id])
+  sessionId   String?
+  bay         Bay?        @relation(fields: [bayId], references: [id])
+  bayId       String?
+  kind        String
+  description String
+  contact     String?
+  status      IssueStatus @default(open)
+  createdAt   DateTime    @default(now())
+
+  @@index([status])
+}
+
+model Device {
+  id              String     @id @default(cuid())
+  name            String
+  role            DeviceRole @default(listener)
+  // HMAC signing key issued at pairing; stored in Android encrypted storage.
+  signingKey      String
+  lastHeartbeatAt DateTime?
+  revoked         Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  payments Payment[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}

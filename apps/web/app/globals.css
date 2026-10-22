@@ -1,0 +1,376 @@
+/* =========================================================================
+   Terminal Ember — customer flow (/, /b/[bayId], /session/[id]).
+   Phone-first, centered .shell column. The admin panel re-skins the same
+   tokens under .cw-admin in admin.css.
+   ========================================================================= */
+
+:root {
+  --bg: #0f1012;
+  --surface: #16181c;
+  --surface-2: #151618;
+  --chip: rgba(38, 44, 50, 0.3);
+  --block: #262c32;
+
+  --text: #f0ece6;
+  --text-2: #79838c;
+  --text-3: #52585f;
+  --on-accent: #0f1012;
+
+  --coral: #fc8a7d;
+  --coral-hover: #fb6655;
+  --sage: #bdceb4;
+  --lavender: #cab8ec;
+  --mist: #9cc4cd;
+
+  --line: rgba(240, 236, 230, 0.075);
+  --line-faint: rgba(240, 236, 230, 0.05);
+  --line-strong: #262c32;
+  --sand: #d9c29a;
+
+  --r-sm: 4.25px;
+  --r-md: 6px;
+  --r-lg: 22px;
+  --r-pill: 999px;
+
+  --font-display: var(--cw-font-display), "Funnel Display", sans-serif;
+  --font-body: var(--cw-font-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--cw-font-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  --t-ui: 0.15s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 18px 56px;
+  min-height: 100dvh;
+}
+
+/* ---- Cards -------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  margin-bottom: 16px;
+  animation: cw-rise 0.5s cubic-bezier(0, 0, 0, 1) both;
+}
+@keyframes cw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Typography --------------------------------------------------------- */
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  text-transform: lowercase;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+p {
+  color: var(--text-2);
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  margin: 0 0 10px;
+}
+strong {
+  color: var(--text);
+  font-weight: 500;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 1px 6px;
+  color: var(--mist);
+}
+
+.muted {
+  color: var(--text-2);
+}
+.center {
+  text-align: center;
+}
+
+/* ---- Plan selector ------------------------------------------------------ */
+
+.plan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: var(--r-md);
+  padding: 15px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  text-align: left;
+  transition: border-color var(--t-ui), background-color var(--t-ui), transform 0.05s;
+}
+.plan:hover {
+  border-color: var(--coral);
+  background: hsla(36, 25%, 92%, 0.03);
+}
+.plan:active {
+  transform: scale(0.99);
+}
+.plan .price {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--coral);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--coral);
+  border-radius: var(--r-sm);
+  padding: 13px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--on-accent);
+  background: var(--coral);
+  transition: color var(--t-ui), border-color var(--t-ui), background-color var(--t-ui),
+    transform 0.05s;
+}
+.btn:hover {
+  background: var(--coral-hover);
+  border-color: var(--coral-hover);
+}
+.btn:active {
+  transform: scale(0.99);
+}
+.btn.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--text-3);
+}
+.btn.secondary:hover {
+  background: hsla(36, 25%, 92%, 0.075);
+  border-color: var(--text-2);
+}
+.btn.success {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: var(--on-accent);
+}
+.btn.success:hover {
+  filter: brightness(1.05);
+}
+.btn.danger {
+  background: transparent;
+  border-color: rgba(251, 102, 85, 0.5);
+  color: var(--coral);
+}
+.btn.danger:hover {
+  background: rgba(251, 102, 85, 0.1);
+  border-color: var(--coral-hover);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---- QR / amounts ------------------------------------------------------- */
+
+.qr {
+  background: var(--text);
+  padding: 16px;
+  border-radius: var(--r-md);
+  display: inline-block;
+  margin: 10px auto 16px;
+  line-height: 0;
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 400;
+  color: var(--coral);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.countdown {
+  font-family: var(--font-display);
+  font-size: 3.6rem;
+  font-weight: 400;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 14px 0;
+}
+
+/* ---- Badges ------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  background: var(--chip);
+}
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge.ready {
+  color: var(--sage);
+  border-color: rgba(189, 206, 180, 0.25);
+}
+.badge.running {
+  color: var(--mist);
+  border-color: rgba(156, 196, 205, 0.25);
+}
+.badge.paused {
+  color: var(--sand);
+  border-color: rgba(217, 194, 154, 0.25);
+}
+.badge.ended,
+.badge.out {
+  color: var(--coral);
+  border-color: rgba(251, 102, 85, 0.3);
+}
+
+/* ---- Dev-only block ----------------------------------------------------- */
+
+.dev {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-strong);
+}
+.dev small {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sand);
+}
+
+/* ---- Spinner / error ---------------------------------------------------- */
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(240, 236, 230, 0.2);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: var(--coral);
+  font-size: 0.9rem;
+}
+
+/* ---- Forms -------------------------------------------------------------- */
+
+label {
+  display: block;
+  margin: 12px 0 6px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  transition: border-color var(--t-ui);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--text-2);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}

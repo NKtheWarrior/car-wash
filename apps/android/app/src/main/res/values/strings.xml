@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Car Wash Owner</string>
+    <string name="listener_label">Car Wash payment listener</string>
+</resources>

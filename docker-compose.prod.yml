@@ -1,0 +1,81 @@
+# Production stack for a single VPS: Postgres + Mosquitto + API + Web.
+# Nginx (installed on the host) terminates TLS and reverse-proxies to the
+# api/web containers, which are published ONLY on 127.0.0.1.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Reads variables from a `.env` file in this directory (copy from
+# .env.production.example). docker compose uses the same file for ${VAR}
+# substitution below.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: carwash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - carwash-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Not published to the host — only reachable on the compose network.
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: carwash-mosquitto
+    restart: unless-stopped
+    ports:
+      # Exposed to the internet so the ESP32 bay controller can connect.
+      # Plaintext+password on 1883; uncomment the TLS listener in the prod
+      # config and publish 8883 for an encrypted link (recommended).
+      - "1883:1883"
+      # - "8883:8883"
+    volumes:
+      - ./infra/mosquitto/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./infra/mosquitto/passwd:/mosquitto/config/passwd:ro
+      - carwash-mosquitto-data:/mosquitto/data
+      - carwash-mosquitto-log:/mosquitto/log
+      # For TLS, also mount your certs, e.g. Let's Encrypt live dir:
+      # - /etc/letsencrypt/live/api.example.com:/mosquitto/certs:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: carwash-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    ports:
+      - "127.0.0.1:4000:4000"   # Nginx on the host proxies to this.
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: carwash-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"   # Nginx on the host proxies to this.
+
+volumes:
+  carwash-pgdata:
+  carwash-mosquitto-data:
+  carwash-mosquitto-log:

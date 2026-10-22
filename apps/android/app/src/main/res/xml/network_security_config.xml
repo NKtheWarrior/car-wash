@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The owner app talks to a self-hosted API over the LAN (e.g. http://192.168.x.x:4000)
+  and, in dev, a plain-HTTP server — so cleartext must be permitted. In production
+  behind HTTPS you can tighten this to specific domains or drop it entirely.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

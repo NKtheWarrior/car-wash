@@ -1,0 +1,23 @@
+# Build context trimming — keep images small & builds reproducible.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/build
+**/*.tsbuildinfo
+
+# Env / secrets (passed at runtime via compose env_file)
+.env
+.env.*
+!.env.production.example
+
+# Apps not built on the VPS
+apps/android
+apps/firmware
+
+# VCS / editor / misc
+.git
+.gitignore
+.idea
+.vscode
+*.log

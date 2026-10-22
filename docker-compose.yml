@@ -1,0 +1,38 @@
+# Local dev infra: Postgres + Mosquitto.
+# Production uses per-bay MQTT credentials + TLS (see PRD §Security); this dev
+# broker allows anonymous connections for convenience only.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: carwash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: carwash
+      POSTGRES_PASSWORD: carwash
+      POSTGRES_DB: carwash
+    ports:
+      - "5432:5432"
+    volumes:
+      - carwash-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carwash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: carwash-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - carwash-mosquitto-data:/mosquitto/data
+      - carwash-mosquitto-log:/mosquitto/log
+
+volumes:
+  carwash-pgdata:
+  carwash-mosquitto-data:
+  carwash-mosquitto-log:

@@ -1,0 +1,24 @@
+# MQTT-only deploy — stand up just the Mosquitto broker now (api/web come later).
+# Uses the same container name + volumes as docker-compose.prod.yml, so when you
+# later run the full stack in this directory the broker carries over unchanged.
+#
+#   docker compose -f docker-compose.mqtt.yml up -d
+#
+# Requires the password file to exist first (see step 2 below).
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: carwash-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      # - "8883:8883"   # uncomment if you enable the TLS listener
+    volumes:
+      - ./infra/mosquitto/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./infra/mosquitto/passwd:/mosquitto/config/passwd:ro
+      - carwash-mosquitto-data:/mosquitto/data
+      - carwash-mosquitto-log:/mosquitto/log
+
+volumes:
+  carwash-mosquitto-data:
+  carwash-mosquitto-log:
