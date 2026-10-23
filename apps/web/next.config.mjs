@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   "allowedDevOrigins": [
     // "192.168.1.71",
-    "192.168.137.1"
+    "10.135.206.38"
   ]
 };
 

@@ -69,6 +69,10 @@ else
     mosquitto_passwd -b -c /m/passwd "$API_MQTT_USER" "$API_MQTT_PW"
   docker run --rm -v "$PWD/$MQ_DIR:/m" eclipse-mosquitto:2 \
     mosquitto_passwd -b    /m/passwd bay-demo          "$BAY_MQTT_PW"
+  # mosquitto_passwd (run as root) writes the file root:root mode 600, which the
+  # in-container mosquitto user (uid 1883) cannot read -> crash loop. Fix perms.
+  chown 1883:1883 "$MQ_DIR/passwd" 2>/dev/null || true
+  chmod 0600 "$MQ_DIR/passwd"
   echo "Created passwd for users: $API_MQTT_USER, bay-demo"
 fi
 

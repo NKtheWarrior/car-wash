@@ -1,7 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
-import { env } from "./env.js";
+import { env, isDev } from "./env.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { customerRouter } from "./routes/customer.js";
@@ -21,14 +21,18 @@ export function createApp(): express.Express {
   // Allow the configured web origin plus any localhost/LAN origin, so the demo
   // works from a phone on the same Wi-Fi even when the PC's DHCP IP changes.
   // (Fine for a local demo; tighten to a fixed allow-list for production.)
+  // Matches full private IPv4 ranges: 10.x.x.x, 192.168.x.x, 172.16–31.x.x.
   const isLanOrigin = (o: string) =>
-    /^https?:\/\/(localhost|127\.0\.0\.1|10\.\d+|192\.168\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+)(:\d+)?$/.test(o);
+    /^https?:\/\/(localhost|127\.0\.0\.1|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2})(:\d+)?$/.test(o);
 
   app.use(
     cors({
       origin(origin, cb) {
+        // Dev: reflect any origin (open CORS) so hotspot/LAN devices on any
+        // subnet can reach the API. Production keeps the strict allow-list.
+        // (Reflect the origin rather than "*", required with credentials:true.)
         // No Origin header = same-origin / curl / native app → allow.
-        if (!origin || origin === env.WEB_PUBLIC_URL || isLanOrigin(origin)) {
+        if (isDev || !origin || origin === env.WEB_PUBLIC_URL || isLanOrigin(origin)) {
           cb(null, true);
         } else {
           cb(new Error(`CORS blocked: ${origin}`));
